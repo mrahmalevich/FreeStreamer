@@ -451,7 +451,9 @@ UInt64 Audio_Stream::audioDataByteCount()
     if (m_audioDataByteCount > 0) {
         audioDataBytes = m_audioDataByteCount;
     } else {
-        audioDataBytes = contentLength() - m_metaDataSizeInBytes;
+        // m_metaDataSizeInBytes is filled only when ID3 tags has been successfully parsed;
+        // if it doesn't happen then value is empty which leads to wrong duration estimation.
+        audioDataBytes = contentLength() - m_dataOffset;
     }
     
     return audioDataBytes;
@@ -1712,18 +1714,19 @@ void Audio_Stream::decodeSinglePacket(CFRunLoopTimerRef timer, void *info)
         
         pthread_mutex_unlock(&THIS->m_streamStateMutex);
         
-        // This blocks until the queue has been able to consume the packets
-        THIS->audioQueue()->handleAudioPackets(outputBufferList.mBuffers[0].mDataByteSize,
-                                         outputBufferList.mNumberBuffers,
-                                         outputBufferList.mBuffers[0].mData,
-                                         &description);
-        
+        // Let delegate to modify data before it pushed to the audio queue
         const UInt32 nFrames = outputBufferList.mBuffers[0].mDataByteSize / THIS->m_dstFormat.mBytesPerFrame;
         
         if (THIS->m_delegate) {
             THIS->m_delegate->samplesAvailable(&outputBufferList, nFrames, description);
         }
         
+        // This blocks until the queue has been able to consume the packets
+        THIS->audioQueue()->handleAudioPackets(outputBufferList.mBuffers[0].mDataByteSize,
+                                         outputBufferList.mNumberBuffers,
+                                         outputBufferList.mBuffers[0].mData,
+                                         &description);
+                
         Stream_Configuration *config = Stream_Configuration::configuration();
         
         const bool continuous = (!(THIS->contentLength() > 0));
