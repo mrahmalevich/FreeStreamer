@@ -21,6 +21,7 @@
         _format = kFSFileFormatUnknown;
         _playlist = NO;
         _xml = NO;
+        _contentLength = 0;
     }
     return self;
 }
@@ -34,6 +35,7 @@
     _format = kFSFileFormatUnknown;
     _playlist = NO;
     _contentType = @"";
+    _contentLength = 0;
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:_url
                                                            cachePolicy:NSURLRequestReloadIgnoringCacheData
@@ -51,7 +53,7 @@
     
     if (!_task) {
 #if defined(DEBUG) || (TARGET_IPHONE_SIMULATOR)
-        NSLog(@"FSCheckContentTypeRequest: Unable to open connection for URL: %@", _url);
+        NSLog(@"FreeStreamer_FSCheckContentTypeRequest: Unable to open connection for URL: %@", _url);
 #endif
         
         self.onFailure();
@@ -96,6 +98,11 @@
     return _xml;
 }
 
+- (UInt64)contentLength
+{
+    return _contentLength;
+}
+
 /*
  * =======================================
  * NSURLSessionDelegate
@@ -110,6 +117,7 @@ didReceiveResponse:(NSURLResponse *)response
     
     _format = kFSFileFormatUnknown;
     _playlist = NO;
+    _contentLength = 0;
     
     NSInteger statusCode = ((NSHTTPURLResponse *)response).statusCode;
     
@@ -147,13 +155,15 @@ didReceiveResponse:(NSURLResponse *)response
             _xml = YES;
         } else {
 #if defined(DEBUG) || (TARGET_IPHONE_SIMULATOR)
-            NSLog(@"FSCheckContentTypeRequest: Cannot resolve %@, guessing the content type by URL: %@", _contentType, _url);
+            NSLog(@"FreeStreamer_FSCheckContentTypeRequest: Cannot resolve %@, guessing the content type by URL: %@", _contentType, _url);
 #endif
             [self guessContentTypeByUrl:response];
         }
+        
+        _contentLength = response.expectedContentLength;
     } else {
 #if defined(DEBUG) || (TARGET_IPHONE_SIMULATOR)
-        NSLog(@"FSCheckContentTypeRequest: Invalid HTTP status code received %li, guessing the content type by URL: %@", (long)statusCode, _url);
+        NSLog(@"FreeStreamer_FSCheckContentTypeRequest: Invalid HTTP status code received %li, guessing the content type by URL: %@", (long)statusCode, _url);
 #endif
         [self guessContentTypeByUrl:response];
     }
@@ -178,7 +188,7 @@ didCompleteWithError:(nullable NSError *)error {
         self.onCompletion();
     } else {
 #if defined(DEBUG) || (TARGET_IPHONE_SIMULATOR)
-        NSLog(@"FSCheckContentTypeRequest: Unable to determine content-type for the URL: %@, error %@", _url, [error localizedDescription]);
+        NSLog(@"FreeStreamer_FSCheckContentTypeRequest: Unable to determine content-type for the URL: %@, error %@", _url, [error localizedDescription]);
 #endif
         
         self.onFailure();
@@ -219,7 +229,7 @@ didCompleteWithError:(nullable NSError *)error {
         _xml = YES;
     } else {
 #if defined(DEBUG) || (TARGET_IPHONE_SIMULATOR)
-        NSLog(@"FSCheckContentTypeRequest: Failed to determine content type from the URL: %@", _url);
+        NSLog(@"FreeStreamer_FSCheckContentTypeRequest: Failed to determine content type from the URL: %@", _url);
 #endif
         /*
          * Failed to guess the content type based on the URL.

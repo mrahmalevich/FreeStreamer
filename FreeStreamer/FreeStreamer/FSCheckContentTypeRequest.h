@@ -85,6 +85,7 @@ typedef NS_ENUM(NSInteger, FSFileFormat) {
     NSString *_contentType;
     BOOL _playlist;
     BOOL _xml;
+    UInt64 _contentLength;
 }
 
 /**
@@ -115,6 +116,10 @@ typedef NS_ENUM(NSInteger, FSFileFormat) {
  * The property is true if the URL contains XML data.
  */
 @property (nonatomic,readonly) BOOL xml;
+/**
+ * Length of the stream.
+ */
+@property (nonatomic,readonly) UInt64 contentLength;
 
 /**
  * Starts the request.
