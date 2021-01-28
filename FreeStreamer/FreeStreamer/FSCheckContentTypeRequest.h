@@ -95,11 +95,11 @@ typedef NS_ENUM(NSInteger, FSFileFormat) {
 /**
  * Called when the content type determination is completed.
  */
-@property (copy) void (^onCompletion)(void);
+@property (copy) void (^onCompletion)(FSCheckContentTypeRequest *);
 /**
  * Called if the content type determination failed.
  */
-@property (copy) void (^onFailure)(void);
+@property (copy) void (^onFailure)(FSCheckContentTypeRequest *);
 /**
  * Contains the format of the URL upon completion of the request.
  */

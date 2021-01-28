@@ -56,7 +56,7 @@
         NSLog(@"FreeStreamer_FSCheckContentTypeRequest: Unable to open connection for URL: %@", _url);
 #endif
         
-        self.onFailure();
+        self.onFailure(self);
         return;
     }
 }
@@ -170,7 +170,7 @@ didReceiveResponse:(NSURLResponse *)response
     
     _task = nil;
     
-    self.onCompletion();
+    self.onCompletion(self);
 }
 
 
@@ -185,13 +185,13 @@ didCompleteWithError:(nullable NSError *)error {
     
     // Still, try if we could resolve the content type by the URL
     if ([self guessContentTypeByUrl:nil]) {
-        self.onCompletion();
+        self.onCompletion(self);
     } else {
 #if defined(DEBUG) || (TARGET_IPHONE_SIMULATOR)
         NSLog(@"FreeStreamer_FSCheckContentTypeRequest: Unable to determine content-type for the URL: %@, error %@", _url, [error localizedDescription]);
 #endif
         
-        self.onFailure();
+        self.onFailure(self);
     }
 }
 

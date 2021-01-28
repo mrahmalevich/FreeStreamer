@@ -332,7 +332,7 @@
         
         _checkContentTypeRequest = [[FSCheckContentTypeRequest alloc] init];
         _checkContentTypeRequest.url = self.url;
-        _checkContentTypeRequest.onCompletion = ^() {
+        _checkContentTypeRequest.onCompletion = ^(FSCheckContentTypeRequest *request) {
             if (weakSelf.checkContentTypeRequest.playlist) {
                 // The URL is a playlist; retrieve the contents
                 [weakSelf.parsePlaylistRequest start];
@@ -346,7 +346,7 @@
                 [weakSelf play];
             }
         };
-        _checkContentTypeRequest.onFailure = ^() {
+        _checkContentTypeRequest.onFailure = ^(FSCheckContentTypeRequest *request) {
             // Failed to check the format; try playing anyway
             
 #if defined(DEBUG) || (TARGET_IPHONE_SIMULATOR)
