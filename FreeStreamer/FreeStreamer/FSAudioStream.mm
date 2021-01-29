@@ -25,6 +25,8 @@
 static NSMutableDictionary *fsAudioStreamPrivateActiveSessions = nil;
 #endif
 
+FSSeekByteOffset FSSeekByteOffsetEmpty = { (UInt64)0, (UInt64)0, (float)0 };
+
 @interface FSCacheObject : NSObject {
 }
 
@@ -491,6 +493,7 @@ public:
 - (void)playFromOffset:(FSSeekByteOffset)offset
 {
     _wasPaused = NO;
+    _lastSeekByteOffset = offset;
     
     if (_audioStream->isPreloading()) {
         _audioStream->seekToOffset(offset.position);
@@ -988,11 +991,11 @@ public:
                                     repeats:NO];
     
     [NSTimer scheduledTimerWithTimeInterval:1
-                                     target:self
-                                   selector:@selector(play)
-                                   userInfo:nil
-                                    repeats:NO];
-    
+                                    repeats:NO
+                                      block:^(NSTimer * _Nonnull timer) {
+        [self playFromOffset:self->_lastSeekByteOffset];
+    }];
+        
     self.retryCount++;
 }
 
@@ -1014,6 +1017,7 @@ public:
 - (void)play
 {
     _wasPaused = NO;
+    _lastSeekByteOffset = FSSeekByteOffsetEmpty;
 
     if (_audioStream->isPreloading()) {
         _audioStream->startCachedDataPlayback();
