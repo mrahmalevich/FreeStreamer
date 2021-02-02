@@ -85,7 +85,7 @@ typedef NS_ENUM(NSInteger, FSFileFormat) {
     NSString *_contentType;
     BOOL _playlist;
     BOOL _xml;
-    UInt64 _contentLength;
+    SInt64 _contentLength;
 }
 
 /**
@@ -119,7 +119,7 @@ typedef NS_ENUM(NSInteger, FSFileFormat) {
 /**
  * Length of the stream.
  */
-@property (nonatomic,readonly) UInt64 contentLength;
+@property (nonatomic,readonly) SInt64 contentLength;
 
 /**
  * Starts the request.

@@ -21,7 +21,7 @@
         _format = kFSFileFormatUnknown;
         _playlist = NO;
         _xml = NO;
-        _contentLength = 0;
+        _contentLength = -1;
     }
     return self;
 }
@@ -35,7 +35,7 @@
     _format = kFSFileFormatUnknown;
     _playlist = NO;
     _contentType = @"";
-    _contentLength = 0;
+    _contentLength = -1;
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:_url
                                                            cachePolicy:NSURLRequestReloadIgnoringCacheData
@@ -98,7 +98,7 @@
     return _xml;
 }
 
-- (UInt64)contentLength
+- (SInt64)contentLength
 {
     return _contentLength;
 }
@@ -117,7 +117,7 @@ didReceiveResponse:(NSURLResponse *)response
     
     _format = kFSFileFormatUnknown;
     _playlist = NO;
-    _contentLength = 0;
+    _contentLength = -1;
     
     NSInteger statusCode = ((NSHTTPURLResponse *)response).statusCode;
     
