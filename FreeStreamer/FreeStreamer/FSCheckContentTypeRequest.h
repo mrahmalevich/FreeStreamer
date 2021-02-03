@@ -91,35 +91,35 @@ typedef NS_ENUM(NSInteger, FSFileFormat) {
 /**
  * The URL of this request.
  */
-@property (nonatomic,copy) NSURL *url;
+@property (nonnull, nonatomic, copy) NSURL * url;
 /**
  * Called when the content type determination is completed.
  */
-@property (copy) void (^onCompletion)(FSCheckContentTypeRequest *);
+@property (nullable, copy) void (^onCompletion)(FSCheckContentTypeRequest * _Nonnull);
 /**
  * Called if the content type determination failed.
  */
-@property (copy) void (^onFailure)(FSCheckContentTypeRequest *);
+@property (nullable, copy) void (^onFailure)(FSCheckContentTypeRequest * _Nonnull);
 /**
  * Contains the format of the URL upon completion of the request.
  */
-@property (nonatomic,readonly) FSFileFormat format;
+@property (nonatomic, readonly) FSFileFormat format;
 /**
  * Containts the content type of the URL upon completion of the request.
  */
-@property (nonatomic,readonly) NSString *contentType;
+@property (nullable, nonatomic,readonly) NSString * contentType;
 /**
  * The property is true if the URL contains a playlist.
  */
-@property (nonatomic,readonly) BOOL playlist;
+@property (nonatomic, readonly) BOOL playlist;
 /**
  * The property is true if the URL contains XML data.
  */
-@property (nonatomic,readonly) BOOL xml;
+@property (nonatomic, readonly) BOOL xml;
 /**
  * Length of the stream.
  */
-@property (nonatomic,readonly) SInt64 contentLength;
+@property (nonatomic, readonly) SInt64 contentLength;
 
 /**
  * Starts the request.
