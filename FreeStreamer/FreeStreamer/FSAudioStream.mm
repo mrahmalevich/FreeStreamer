@@ -484,38 +484,6 @@ public:
     return _audioStream->strictContentTypeChecking();
 }
 
-- (void)playFromURL:(NSURL*)url
-{
-   [self setUrl:url];
-   [self play];
-}
-
-- (void)playFromOffset:(FSSeekByteOffset)offset
-{
-    _wasPaused = NO;
-    _lastSeekByteOffset = offset;
-    
-    if (_audioStream->isPreloading()) {
-        _audioStream->seekToOffset(offset.position);
-        _audioStream->setPreloading(false);
-    } else {
-        astreamer::Input_Stream_Position position;
-        position.start = offset.start;
-        position.end   = offset.end;
-        
-        _audioStream->open(&position);
-        
-        _audioStream->setSeekOffset(offset.position);
-        _audioStream->setContentLength(offset.end);
-    }
-    
-    if (!_reachability) {
-        _reachability = [Reachability reachabilityForInternetConnection];
-        
-        [_reachability startNotifier];
-    }
-}
-
 - (void)setDefaultContentType:(NSString *)defaultContentType
 {
     if (defaultContentType) {
@@ -954,13 +922,6 @@ public:
         return;
     }
     
-    if (_wasPaused) {
-#if defined(DEBUG) || (TARGET_IPHONE_SIMULATOR)
-        NSLog(@"FSAudioStream: Stream was paused. Not attempting a restart");
-#endif
-        return;
-    }
-    
     if (!self.internetConnectionAvailable) {
 #if defined(DEBUG) || (TARGET_IPHONE_SIMULATOR)
         NSLog(@"FSAudioStream: Internet connection not available. Not attempting a restart");
@@ -1016,14 +977,19 @@ public:
 
 - (void)play
 {
-    _wasPaused = NO;
-    _lastSeekByteOffset = FSSeekByteOffsetEmpty;
+    [self playFromOffset:FSSeekByteOffsetEmpty];
+}
 
-    if (_audioStream->isPreloading()) {
-        _audioStream->startCachedDataPlayback();
-        
-        return;
-    }
+- (void)playFromURL:(NSURL*)url
+{
+   [self setUrl:url];
+   [self play];
+}
+
+- (void)playFromOffset:(FSSeekByteOffset)offset
+{
+    _wasPaused = NO;
+    _lastSeekByteOffset = offset;
     
 #if (__IPHONE_OS_VERSION_MIN_REQUIRED >= 40000)
     [self endBackgroundTask];
@@ -1033,8 +999,28 @@ public:
     }];
 #endif
     
-    _audioStream->open();
-
+    if (_audioStream->isPreloading()) {
+        if (offset.position == 0) {
+            _audioStream->startCachedDataPlayback();
+        } else {
+            _audioStream->seekToOffset(offset.position);
+            _audioStream->setPreloading(false);
+        }
+    } else {
+        if (offset.position == 0) {
+            _audioStream->open();
+        } else {
+            astreamer::Input_Stream_Position position;
+            position.start = offset.start;
+            position.end   = offset.end;
+            
+            _audioStream->open(&position);
+            
+            _audioStream->setSeekOffset(offset.position);
+            _audioStream->setContentLength(offset.end);
+        }
+    }
+    
     if (!_reachability) {
         _reachability = [Reachability reachabilityForInternetConnection];
         
@@ -1063,6 +1049,7 @@ public:
 - (void)pause
 {
     _wasPaused = YES;
+    _lastSeekByteOffset = [self currentSeekByteOffset];
     _audioStream->pause();
 }
 
