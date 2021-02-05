@@ -213,7 +213,7 @@ public:
 @interface FSAudioStreamPrivate : NSObject {
     astreamer::Audio_Stream *_audioStream;
     NSURL *_url;
-	AudioStreamStateObserver *_observer;
+    AudioStreamStateObserver *_observer;
     NSString *_defaultContentType;
     Reachability *_reachability;
     FSSeekByteOffset _lastSeekByteOffset;
@@ -436,6 +436,11 @@ public:
         _backgroundTask = UIBackgroundTaskInvalid;
     }
 #endif
+}
+
+- (void)saveCurrentSeekByteOffset
+{
+    _lastSeekByteOffset = [self currentSeekByteOffset];
 }
 
 - (AudioStreamStateObserver *)streamStateObserver
@@ -725,21 +730,8 @@ public:
     if ([interruptionType intValue] == AVAudioSessionInterruptionTypeBegan) {
         if ([self isPlaying] && !_wasPaused) {
             self.wasInterrupted = YES;
-            // Continuous streams do not have a duration.
-            self.wasContinuousStream = !([self durationInSeconds] > 0);
-            
-            if (self.wasContinuousStream) {
-#if defined(DEBUG) || (TARGET_IPHONE_SIMULATOR)
-                NSLog(@"FSAudioStream: Interruption began. Continuous stream. Stopping the stream.");
-#endif
-                [self stop];
-            } else {
-#if defined(DEBUG) || (TARGET_IPHONE_SIMULATOR)
-                NSLog(@"FSAudioStream: Interruption began. Non-continuous stream. Stopping the stream and saving the offset.");
-#endif
-                _lastSeekByteOffset = [self currentSeekByteOffset];
-                [self stop];
-            }
+            [self saveCurrentSeekByteOffset];
+            [self stop];
         }
     } else if ([interruptionType intValue] == AVAudioSessionInterruptionTypeEnded) {
         if (self.wasInterrupted) {
@@ -752,24 +744,7 @@ public:
                     }
                     fsAudioStreamPrivateActiveSessions[[NSNumber numberWithUnsignedLong:(unsigned long)self]] = @"";
                 }
-                
-                if (self.wasContinuousStream) {
-#if defined(DEBUG) || (TARGET_IPHONE_SIMULATOR)
-                    NSLog(@"FSAudioStream: Interruption ended. Continuous stream. Starting the playback.");
-#endif
-                    /*
-                     * Resume playing.
-                     */
-                    [self play];
-                } else {
-#if defined(DEBUG) || (TARGET_IPHONE_SIMULATOR)
-                    NSLog(@"FSAudioStream: Interruption ended. Continuous stream. Playing from the offset");
-#endif
-                    /*
-                     * Resume playing.
-                     */
-                   [self playFromOffset:_lastSeekByteOffset];
-                }
+                [self playFromOffset:_lastSeekByteOffset];
             } else {
 #if defined(DEBUG) || (TARGET_IPHONE_SIMULATOR)
                 NSLog(@"FSAudioStream: Interruption ended. Continuous stream. Not resuming.");
@@ -1411,7 +1386,7 @@ public:
 {
     NSAssert([NSThread isMainThread], @"FSAudioStream.play needs to be called in the main thread");
     
-    [_private play];   
+    [_private play];
 }
 
 - (void)playFromURL:(NSURL*)url
@@ -1822,6 +1797,8 @@ void AudioStreamStateObserver::audioStreamStateChanged(astreamer::Audio_Stream::
             notificationHandler = @selector(notifyPlaybackStopped);
             break;
         case astreamer::Audio_Stream::BUFFERING:
+            [priv saveCurrentSeekByteOffset];
+            
             notificationHandler = @selector(notifyPlaybackBuffering);
             break;
         case astreamer::Audio_Stream::PLAYING:
@@ -1839,6 +1816,7 @@ void AudioStreamStateObserver::audioStreamStateChanged(astreamer::Audio_Stream::
             notificationHandler = @selector(notifyPlaybackEndOfFile);
             break;
         case astreamer::Audio_Stream::FAILED:
+            [priv saveCurrentSeekByteOffset];
             [priv endBackgroundTask];
             
             notificationHandler = @selector(notifyPlaybackFailed);
